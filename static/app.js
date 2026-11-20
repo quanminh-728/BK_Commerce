@@ -1,3 +1,9 @@
+document.querySelectorAll("[data-submit-on-change]").forEach(function (field) {
+  field.addEventListener("change", function () {
+    if (field.form) field.form.requestSubmit();
+  });
+});
+
 document.querySelectorAll("[data-open]").forEach(function (b) {
   b.addEventListener("click", function () {
     var d = document.getElementById(b.dataset.open);

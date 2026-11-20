@@ -8,7 +8,7 @@
       <div class="field">
         <label for="khach-hang">Khách hàng</label>
         <select id="khach-hang" name="khach_hang" data-submit-on-change>
-          <option value="">Chọn khách hàng</option>
+          <option value="" {% if customer is none %}selected{% endif %}>Chọn khách hàng</option>
           {% for item in customers %}
           <option value="{{ item.ma }}" {% if item.ma == customer %}selected{% endif %}>#{{ item.ma }} · {{ item.ten }}</option>
           {% endfor %}
@@ -129,7 +129,7 @@
     </form>
   </dialog>
   {% else %}
-  {% if customer is not none %}<div class="card empty">Khách hàng này chưa có đơn hàng.</div>{% endif %}
+  <div class="card empty">{{ 'Khách hàng này chưa có đơn hàng.' if customer is not none else 'Chọn khách hàng để xem đơn hàng và sản phẩm đã đặt.' }}</div>
   {% endfor %}
 </div>
 {% endblock %}
