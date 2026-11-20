@@ -13,6 +13,7 @@
   <a class="brand" href="{{ url_for('san_pham') }}"><span class="logo"><img src="{{ url_for('static', filename='img/logo.png') }}" alt=""></span>BK-Commerce</a>
   <nav class="tabs">
     <a href="{{ url_for('san_pham') }}" class="{{ 'on' if endpoint == 'san_pham' else '' }}">Quản lý sản phẩm</a>
+    <a href="{{ url_for('hoi_vien') }}" class="{{ 'on' if endpoint == 'hoi_vien' else '' }}">Tra cứu hội viên</a>
     <a href="{{ url_for('chi_tiet_don_hang') }}" class="{{ 'on' if endpoint and endpoint.startswith('chi_tiet_don_hang') else '' }}">Chi tiết đơn hàng</a>
   </nav>
 </div></header>
