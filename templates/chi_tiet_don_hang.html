@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Chi tiết đơn hàng{% endblock %}
+{% block content %}
+<h1 class="title">Chi tiết đơn hàng</h1>
+<div class="stack">
+  <div class="card">
+    <form method="get" action="{{ url_for('chi_tiet_don_hang') }}">
+      <div class="field">
+        <label for="khach-hang">Khách hàng</label>
+        <select id="khach-hang" name="khach_hang" data-submit-on-change>
+          <option value="">Chọn khách hàng</option>
+          {% for item in customers %}
+          <option value="{{ item.ma }}" {% if item.ma == customer %}selected{% endif %}>#{{ item.ma }} · {{ item.ten }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+  </div>
+
+  {% for order in orders %}
+  {% set lines = order.lines %}
+  {% set order_modal = modal if active_order == order.ma else none %}
+  <div class="card">
+    <div class="toolbar">
+      <div>
+        <h2>Đơn #{{ order.ma }} ({{ lines|length }} dòng)</h2>
+        <div class="meta">{{ order.ten }} · Chi nhánh #{{ order.chi_nhanh }} · {{ order.trang_thai }}</div>
+      </div>
+      <button class="btn" type="button" data-open="dlg-add-line-{{ order.ma }}" data-f-bien-the="" data-f-so-luong="1">+ Thêm dòng</button>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Dòng</th><th>Sản phẩm</th><th class="num">Số lượng đặt</th><th class="num">Tồn kho chi nhánh</th><th class="num">Đơn giá</th><th class="num">Thành tiền</th><th>Đánh giá</th><th>Thao tác</th></tr></thead>
+      <tbody>
+      {% for line in lines %}
+      <tr>
+        <td>{{ line.dong }}</td>
+        <td><div class="prod">
+          {% set image = anh(line.san_pham) %}
+          {% if image %}<img src="{{ image }}" alt="">{% else %}<span class="ava">{{ line.ten[:1] }}</span>{% endif %}
+          <div><b>{{ line.ten }}</b><div class="meta">Biến thể #{{ line.bien_the }} · Điểm TB {{ line.diem|diem }}</div></div>
+        </div></td>
+        <td class="num">{{ line.so_luong }}</td>
+        <td class="num">{{ line.ton if line.ton is not none else 'Chưa có' }}</td>
+        <td class="num">{{ line.gia|vnd }}</td>
+        <td class="num">{{ line.tien|vnd }}</td>
+        <td>
+          {% if line.danh_gia %}
+          <span class="score"><i class="st">★</i> {{ line.sao }}/5</span>
+          <span class="pill {{ 'good' if line.hien == 'Hiển thị' else 'off' }}">{{ line.hien }}</span>
+          {% if line.nd %}<div class="meta">{{ line.nd|truncate(75) }}</div>{% endif %}
+          {% else %}<span class="meta">Chưa đánh giá</span>{% endif %}
+        </td>
+        <td><div class="actions">
+          <button class="btn ghost sm" type="button" data-open="dlg-edit-line-{{ order.ma }}"
+            data-action="{{ url_for('chi_tiet_don_hang_luu', ma=order.ma, dong=line.dong) }}"
+            data-title="Sửa số lượng dòng #{{ line.dong }}" data-f-so-luong="{{ line.so_luong }}">Sửa số lượng</button>
+          <button class="btn ghost sm" type="button" data-open="dlg-review-{{ order.ma }}"
+            data-action="{{ url_for('chi_tiet_don_hang_danh_gia', ma=order.ma, dong=line.dong, review=line.danh_gia) }}"
+            data-title="{{ 'Sửa' if line.danh_gia else 'Thêm' }} đánh giá dòng #{{ line.dong }}"
+            data-sao="{{ line.sao or 5 }}" data-nd="{{ line.nd or '' }}" data-hien="{{ line.hien or 'Hiển thị' }}">{{ 'Sửa đánh giá' if line.danh_gia else 'Thêm đánh giá' }}</button>
+          {% if line.danh_gia %}
+          <form method="post" action="{{ url_for('chi_tiet_don_hang_xoa_danh_gia', ma=order.ma, dong=line.dong, review=line.danh_gia) }}"
+            data-confirm="Xóa đánh giá của dòng #{{ line.dong }}?"><button class="btn danger sm">Xóa đánh giá</button></form>
+          {% endif %}
+        </div></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" class="empty">Đơn hàng này chưa có dòng sản phẩm.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+
+  {% for adding in [true, false] %}
+  {% set active = order_modal and order_modal.kind == 'line' and order_modal.adding == adding %}
+  {% set fields = order_modal.form if active else {} %}
+  <dialog id="{{ 'dlg-add-line' if adding else 'dlg-edit-line' }}-{{ order.ma }}" {% if active %}data-autoopen{% endif %}>
+    <form method="post" {% if active %}action="{{ order_modal.action }}"{% elif adding %}action="{{ url_for('chi_tiet_don_hang_luu', ma=order.ma) }}"{% endif %}>
+      <h3 data-title>{{ order_modal.title if active else ('Thêm dòng đơn hàng' if adding else 'Sửa số lượng') }}</h3>
+      {% if active %}<div class="msg error" role="alert">{{ order_modal.error }}</div>{% endif %}
+      {% if adding %}
+      <div class="field">
+        <label for="bien-the-{{ order.ma }}">Biến thể sản phẩm</label>
+        <select id="bien-the-{{ order.ma }}" name="BienThe" required>
+          <option value="">Chọn biến thể</option>
+          {% for variant in order.variants %}
+          <option value="{{ variant.ma }}" {% if fields.get('BienThe') == variant.ma|string %}selected{% endif %}>
+            #{{ variant.ma }} · {{ variant.ten }}{% if variant.mau %} / {{ variant.mau }}{% endif %}
+            · {{ variant.duyet or 'Chưa xử lý' }} · {{ variant.kha_dung or 'Chưa xác định' }}
+            · {{ 'Tồn: ' ~ variant.ton if variant.ton is not none else 'Chưa có tồn kho' }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      {% set quantity_id = ('so-luong-them-' if adding else 'so-luong-sua-') ~ order.ma %}
+      <div class="field"><label for="{{ quantity_id }}">Số lượng đặt</label>
+        <input id="{{ quantity_id }}" name="SoLuong" type="number" min="1" max="2147483647" step="1" value="{{ fields.get('SoLuong', 1) }}" required>
+      </div>
+      <div class="foot"><button type="button" class="btn ghost" data-close>Hủy</button><button class="btn">Lưu</button></div>
+    </form>
+  </dialog>
+  {% endfor %}
+
+  {% set active = order_modal and order_modal.kind == 'review' %}
+  {% set fields = order_modal.form if active else {} %}
+  <dialog id="dlg-review-{{ order.ma }}" {% if active %}data-autoopen{% endif %}>
+    <form method="post" {% if active %}action="{{ order_modal.action }}"{% endif %}>
+      <h3 data-title>{{ order_modal.title if active else 'Đánh giá sản phẩm' }}</h3>
+      {% if active %}<div class="msg error" role="alert">{{ order_modal.error }}</div>{% endif %}
+      <div class="field"><label for="sao-{{ order.ma }}">Số sao</label>
+        <select id="sao-{{ order.ma }}" name="sao" required>
+          {% for stars in range(5, 0, -1) %}
+          <option value="{{ stars }}" {% if fields.get('sao', '5') == stars|string %}selected{% endif %}>{{ stars }} sao</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field"><label for="nd-{{ order.ma }}">Nội dung nhận xét</label>
+        <textarea id="nd-{{ order.ma }}" name="nd">{{ fields.get('nd', '') }}</textarea>
+      </div>
+      <div class="field"><label for="hien-{{ order.ma }}">Trạng thái hiển thị</label>
+        <select id="hien-{{ order.ma }}" name="hien" required>
+          {% for visibility in ['Hiển thị', 'Ẩn'] %}
+          <option {% if fields.get('hien') == visibility %}selected{% endif %}>{{ visibility }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="foot"><button type="button" class="btn ghost" data-close>Hủy</button><button class="btn">Lưu</button></div>
+    </form>
+  </dialog>
+  {% else %}
+  {% if customer is not none %}<div class="card empty">Khách hàng này chưa có đơn hàng.</div>{% endif %}
+  {% endfor %}
+</div>
+{% endblock %}
