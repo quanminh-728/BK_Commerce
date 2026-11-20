@@ -109,3 +109,9 @@ input.bad { border-color:var(--err); }
 .member-icon { width:48px; height:48px; flex:none; display:grid; place-items:center; border-radius:50%; background:var(--org-l); color:var(--org); font-size:25px; font-weight:700; }
 .member-value { color:var(--org); font-size:24px; font-weight:700; margin:3px 0; overflow-wrap:anywhere; }
 @media (max-width:700px) { .lookup-form { display:block; } .lookup-form .btn { width:100%; justify-content:center; } .member-results { grid-template-columns:1fr; } }
+
+/* Biến thể sản phẩm (SP1) */
+.vfilters { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; align-items:end; }
+.vfilters .field { margin-bottom:0; }
+.vfilters .go { display:flex; gap:8px; }
+.vspec { color:var(--mute); font-size:12.5px; }
