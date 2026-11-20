@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Sản phẩm{% endblock %}
+{% block content %}
+<h1 class="title">Quản lý sản phẩm</h1>
+<div class="card">
+  <div class="toolbar"><h2>Danh sách sản phẩm ({{ products|length }})</h2>
+    <button class="btn" data-open="dlg-sp" data-action="{{ url_for('san_pham_them') }}" data-title="Thêm sản phẩm"
+      data-f-Ten="" data-f-MoTa="" data-f-Gia="" data-f-TrangThai="Đang kinh doanh">+ Thêm sản phẩm</button></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Mã</th><th>Sản phẩm</th><th class="num">Giá cơ sở</th><th>Trạng thái</th><th class="num">Biến thể</th><th>Điểm TB</th><th></th></tr></thead>
+    <tbody>
+    {% for p in products %}
+      <tr>
+        <td>{{ p.ma }}</td>
+        <td><div class="prod">{% set u = anh(p.ma) %}{% if u %}<img src="{{ u }}" alt="">{% else %}<span class="ava">{{ p.ten[:1] }}</span>{% endif %}
+          <div><b>{{ p.ten }}</b>{% if p.mo_ta %}<div class="meta">{{ p.mo_ta[:60] }}</div>{% endif %}</div></div></td>
+        <td class="num">{{ p.gia|vnd }}</td>
+        <td><span class="pill {{ 'good' if p.tt == 'Đang kinh doanh' else 'off' }}">{{ p.tt }}</span></td>
+        <td class="num">{{ p.so_bt }}</td>
+        <td><span class="score {{ '' if p.diem and p.diem > 0 else 'none' }}"><i class="st">★</i> {{ p.diem|diem if p.diem and p.diem > 0 else '—' }}</span></td>
+        <td><div class="actions">
+          <button class="btn ghost sm" data-open="dlg-sp" data-action="{{ url_for('san_pham_sua', ma=p.ma) }}" data-title="Sửa sản phẩm #{{ p.ma }}"
+            data-f-Ten="{{ p.ten }}" data-f-MoTa="{{ p.mo_ta or '' }}" data-f-Gia="{{ p.gia|int }}" data-f-TrangThai="{{ p.tt }}">Sửa</button>
+          <form method="post" action="{{ url_for('san_pham_xoa', ma=p.ma) }}" data-confirm="Xóa sản phẩm «{{ p.ten }}»?"><button class="btn danger sm">Xóa</button></form>
+        </div></td>
+      </tr>
+    {% else %}<tr><td colspan="7" class="empty">Chưa có sản phẩm nào.</td></tr>{% endfor %}
+    </tbody></table></div>
+</div>
+
+<dialog id="dlg-sp" {% if modal %}data-autoopen{% endif %}><form method="post" action="{{ modal.action if modal else url_for('san_pham_them') }}">
+  <h3 data-title>{{ modal.title if modal else 'Thêm sản phẩm' }}</h3>
+  {% if modal and modal.errors %}<div class="msg error">{% for e in modal.errors %}<div>{{ e }}</div>{% endfor %}</div>{% endif %}
+  {% set fm = modal.form if modal else {} %}
+  <div class="field"><label for="Ten">Tên sản phẩm *</label><input id="Ten" name="Ten" maxlength="200" value="{{ fm.get('Ten', '') }}"></div>
+  <div class="field"><label for="MoTa">Mô tả</label><input id="MoTa" name="MoTa" value="{{ fm.get('MoTa', '') }}"></div>
+  <div class="field"><label for="Gia">Giá cơ sở (đ) *</label><input id="Gia" name="Gia" type="number" min="0" step="any" value="{{ fm.get('Gia', '') }}"></div>
+  <div class="field"><label for="TrangThai">Trạng thái kinh doanh *</label>
+    <select id="TrangThai" name="TrangThai">{% for k in trang_thai %}<option {{ 'selected' if (fm.get('TrangThai') or 'Đang kinh doanh') == k }}>{{ k }}</option>{% endfor %}</select></div>
+  <div class="foot"><button type="button" class="btn ghost" data-close>Hủy</button><button class="btn">Lưu</button></div>
+</form></dialog>
+{% endblock %}

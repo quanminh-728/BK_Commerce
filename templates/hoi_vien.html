@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Tra cứu hội viên{% endblock %}
+{% block content %}
+<h1 class="title">Tra cứu chi tiêu và hạng hội viên</h1>
+<div class="stack">
+  <section class="card">
+    <h2>Thông tin tra cứu</h2>
+    <form method="post" action="{{ url_for('hoi_vien') }}" class="lookup-form">
+      <div class="field lookup-input">
+        <label for="ma_khach_hang">Nhập mã khách hàng *</label>
+        <input id="ma_khach_hang" name="ma_khach_hang" type="number" min="1" step="1" required
+               placeholder="Ví dụ: 1" value="{{ ma_khach_hang }}">
+      </div>
+      <button class="btn" type="submit">Tra cứu</button>
+    </form>
+    {% if loi %}<div class="result bad"><b>Không thể tra cứu</b>{{ loi }}</div>{% endif %}
+  </section>
+
+  {% if ket_qua %}
+  <section class="card">
+    <div class="toolbar"><h2>Kết quả khách hàng #{{ ma_khach_hang }}</h2><span class="pill good">Tra cứu thành công</span></div>
+    <div class="member-results">
+      <div class="member-result">
+        <div class="member-icon">₫</div>
+        <div><div class="meta">Tổng chi tiêu hợp lệ</div>
+          <div class="member-value">{{ ket_qua.tong_chi_tieu|vnd }}</div>
+        </div>
+      </div>
+      <div class="member-result">
+        <div class="member-icon">★</div>
+        <div><div class="meta">Hạng hội viên hiện tại</div>
+          <div class="member-value">{{ ket_qua.hang_hoi_vien or 'Chưa xác định' }}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
