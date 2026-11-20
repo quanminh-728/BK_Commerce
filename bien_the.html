@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Biến thể sản phẩm{% endblock %}
+{% block content %}
+<h1 class="title">Biến thể sản phẩm theo giá và danh mục</h1>
+
+<div class="card" style="margin-bottom:18px">
+  <h2>Tìm kiếm và lọc</h2>
+  <form method="get" action="{{ url_for('bien_the') }}">
+    <div class="vfilters">
+      <div class="field"><label for="dm">Danh mục</label>
+        <select id="dm" name="dm" onchange="this.form.submit()">
+          <option value="">Tất cả danh mục</option>
+          {% for d in danh_muc %}<option value="{{ d.ma }}" {{ 'selected' if f.dm == d.ma|string }}>{{ d.ten }}</option>{% endfor %}
+        </select></div>
+      <div class="field"><label for="gia_min">Giá từ (đ)</label>
+        <input id="gia_min" name="gia_min" type="number" min="0" step="any" placeholder="0" value="{{ f.gia_min }}"></div>
+      <div class="field"><label for="gia_max">Giá đến (đ)</label>
+        <input id="gia_max" name="gia_max" type="number" min="0" step="any" placeholder="Không giới hạn" value="{{ f.gia_max }}"></div>
+      <div class="field"><label for="q">Từ khóa (tên, màu, dung lượng, kích thước)</label>
+        <input id="q" name="q" maxlength="100" placeholder="Ví dụ: iPhone, Đen, 256GB" value="{{ f.q }}"></div>
+      <div class="field"><label for="tt">Trạng thái khả dụng</label>
+        <select id="tt" name="tt" onchange="this.form.submit()">
+          <option value="">Tất cả</option>
+          {% for k in kha_dung %}<option {{ 'selected' if f.tt == k }}>{{ k }}</option>{% endfor %}
+        </select></div>
+      <div class="field"><label for="sort">Sắp xếp</label>
+        <select id="sort" name="sort" onchange="this.form.submit()">
+          {% for k, v in sap_xep.items() %}<option value="{{ k }}" {{ 'selected' if f.sort == k }}>{{ v[2] }}</option>{% endfor %}
+        </select></div>
+      <div class="go"><button class="btn" type="submit">Tìm kiếm</button>
+        <a class="btn ghost" href="{{ url_for('bien_the') }}">Đặt lại</a></div>
+    </div>
+  </form>
+  {% if errors %}<div class="msg error" style="margin-top:14px">{% for e in errors %}<div>{{ e }}</div>{% endfor %}</div>{% endif %}
+</div>
+
+<div class="card">
+  <div class="toolbar">
+    <h2>Danh sách biến thể ({{ rows|length }})</h2>
+    <span class="meta">{{ so_sp }} sản phẩm · dữ liệu từ <code>sp_TimKiemBienTheTheoGiaVaDanhMuc</code></span>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Mã BT</th><th>Sản phẩm</th><th>Danh mục</th><th>Phân loại</th><th class="num">Giá bán</th><th>Khả dụng</th><th></th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      {% set p = enrich.get(r['Mã sản phẩm']) %}
+      <tr>
+        <td>#{{ r['Mã biến thể'] }}</td>
+        <td><div class="prod">{% set u = anh(r['Mã sản phẩm']) %}{% if u %}<img src="{{ u }}" alt="">{% else %}<span class="ava">{{ r['Tên sản phẩm'][:1] }}</span>{% endif %}
+          <div><b>{{ r['Tên sản phẩm'] }}</b><div class="meta">Mã SP #{{ r['Mã sản phẩm'] }}</div></div></div></td>
+        <td>{{ r['Tên danh mục'] }}</td>
+        <td><span class="vspec">{{ [r['Màu sắc'], r['Dung lượng'], r['Kích thước']] | select | join(' · ') or '—' }}</span></td>
+        <td class="num">{{ r['Giá bán']|vnd }}</td>
+        <td><span class="pill {{ 'good' if r['Trạng thái khả dụng'] == 'Khả dụng' else 'off' }}">{{ r['Trạng thái khả dụng'] }}</span></td>
+        <td><div class="actions">
+          {% if p %}
+          <button class="btn ghost sm" data-open="dlg-sp" data-action="{{ url_for('san_pham_sua', ma=r['Mã sản phẩm']) }}" data-title="Sửa sản phẩm #{{ r['Mã sản phẩm'] }}"
+            data-f-Ten="{{ r['Tên sản phẩm'] }}" data-f-MoTa="{{ p.mo_ta or '' }}" data-f-Gia="{{ p.gia|int }}" data-f-TrangThai="{{ p.tt }}">Sửa SP</button>
+          {% endif %}
+          <form method="post" action="{{ url_for('san_pham_xoa', ma=r['Mã sản phẩm']) }}"
+                data-confirm="Xóa sản phẩm «{{ r['Tên sản phẩm'] }}»?&#10;Chỉ xóa được khi sản phẩm chưa có biến thể và chưa liên kết nhà cung cấp.">
+            <input type="hidden" name="next" value="{{ next_url }}"><button class="btn danger sm">Xóa SP</button></form>
+        </div></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" class="empty">{% if errors %}Chưa thể hiển thị dữ liệu, hãy sửa bộ lọc rồi tìm lại.{% else %}Không có biến thể nào khớp bộ lọc hiện tại.{% endif %}</td></tr>
+    {% endfor %}
+    </tbody></table></div>
+</div>
+
+<dialog id="dlg-sp"><form method="post" action="">
+  <h3 data-title>Sửa sản phẩm</h3>
+  <input type="hidden" name="next" value="{{ next_url }}">
+  <div class="field"><label for="Ten">Tên sản phẩm *</label><input id="Ten" name="Ten" maxlength="200" required></div>
+  <div class="field"><label for="MoTa">Mô tả</label><input id="MoTa" name="MoTa"></div>
+  <div class="field"><label for="Gia">Giá cơ sở (đ) *</label><input id="Gia" name="Gia" type="number" min="0" step="any" required></div>
+  <div class="field"><label for="TrangThai">Trạng thái kinh doanh *</label>
+    <select id="TrangThai" name="TrangThai">{% for k in trang_thai %}<option>{{ k }}</option>{% endfor %}</select></div>
+  <div class="foot"><button type="button" class="btn ghost" data-close>Hủy</button><button class="btn">Lưu</button></div>
+</form></dialog>
+{% endblock %}
